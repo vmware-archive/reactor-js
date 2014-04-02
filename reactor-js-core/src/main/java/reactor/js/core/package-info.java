@@ -1,0 +1,3 @@
+/**
+ * Core Reactor JavaScript components.
+ */
