@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNotNull;
  * @author Jon Brisbin
  */
 @RunWith(NashornJUnitTestRunner.class)
-@JavaScriptTests(module = "nashorn-tests", paths = {"reactor-js-test/src/test/resources"})
+@JavaScriptTests(module = "nashorn-tests", paths = {"reactor-js-test/src/test/resources", "src/test/resources"})
 public class NashornJUnitRunnerIntegrationTests {
 
 	String greeting;
