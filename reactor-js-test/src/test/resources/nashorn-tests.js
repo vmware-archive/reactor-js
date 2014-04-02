@@ -1,4 +1,4 @@
-require.paths = ["reactor-js-test/src/test/resources"];
+require.paths = ["reactor-js-test/src/test/resources", "src/test/resources"];
 
 var ext = require("helper");
 assertNotUndefined("helper extension was loaded", ext.helloWorld);
