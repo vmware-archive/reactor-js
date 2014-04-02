@@ -25,4 +25,9 @@
     }
   };
 
+  global.assertNotUndefined = function () {
+    var msg = typeof arguments[0] === 'string' || '';
+    assertTrue(msg, (arguments[1] ? true : false));
+  }
+
 })(this);

@@ -108,11 +108,21 @@ public class NashornJUnitTestRunner extends BlockJUnit4ClassRunner {
 					             @Override
 					             public Object call(Object thiz, Object... args) {
 						             try {
-							             return methodToInvoke.invoke(null);
+							             return methodToInvoke.invoke(null, args);
 						             } catch (Exception e) {
 							             return new NashornException(e.getMessage(), e) {
 							             };
 						             }
+					             }
+
+					             @Override
+					             public boolean isFunction() {
+						             return true;
+					             }
+
+					             @Override
+					             public boolean isStrictFunction() {
+						             return true;
 					             }
 				             }
 				);
