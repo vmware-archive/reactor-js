@@ -19,6 +19,7 @@ package reactor.js.test;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.NashornException;
+import jdk.nashorn.api.scripting.NashornScriptEngine;
 import jdk.nashorn.internal.runtime.Undefined;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
@@ -31,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.*;
-import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -45,47 +45,46 @@ public class NashornJUnitTestRunner extends BlockJUnit4ClassRunner {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NashornJUnitTestRunner.class);
 
-	private final ScriptEngine  engine;
-	private final ScriptContext context;
+	private final NashornScriptEngine engine;
+	private final Bindings            bindings;
+	private final CompiledScript      script;
 
 	public NashornJUnitTestRunner(Class<?> testType) throws InitializationError, ScriptException {
 		super(testType);
 
 		ScriptEngineManager manager = new ScriptEngineManager();
-		this.engine = manager.getEngineByName("nashorn");
-		if (null == this.engine) {
+		ScriptEngine engine = manager.getEngineByName("nashorn");
+		if (null == engine) {
 			throw new IllegalStateException("Nashorn JavaScript engine not available.");
 		}
-		this.context = new SimpleScriptContext();
+		this.engine = (NashornScriptEngine) engine;
+		this.bindings = engine.createBindings();
 
 		StringBuilder loadJs = new StringBuilder();
 		loadJs.append("load(\"classpath:META-INF/reactor/reactor-test.js\");\n");
 
 		JavaScriptTests testsAnno = testType.getDeclaredAnnotation(JavaScriptTests.class);
+		if (testsAnno.paths().length > 0) {
+			loadJs.append("require.paths=[\".\"");
+			for (String loadPath : testsAnno.paths()) {
+				loadJs.append(",\"").append(loadPath).append("\"");
+			}
+			loadJs.append("];\n");
+		}
 		for (String script : testsAnno.value()) {
-			loadJs.append("load(\"").append(script).append("\");\n");
+			loadJs.append("require(\"").append(script).append("\");\n");
 		}
 		if (!"".equals(testsAnno.module())) {
 			String moduleName = testsAnno.module();
-			if (testsAnno.paths().length > 0) {
-				loadJs.append("require.paths=[\".\"");
-				for (String loadPath : testsAnno.paths()) {
-					loadJs.append(",\"").append(loadPath).append("\"");
-				}
-				loadJs.append("];\n");
-			}
 			loadJs.append("require(\"" + moduleName + "\");\n");
 		}
 
-		Bindings bindings = engine.createBindings();
-
 		addStaticMethods(Assert.class, bindings);
 		addStaticMethods(CoreMatchers.class, bindings);
-		bindings.put("require", new RequireFunction(engine, context));
 
-		context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-		engine.setContext(context);
-		engine.eval(new StringReader(loadJs.toString()), bindings);
+		bindings.put("require", new RequireFunction(engine, bindings));
+
+		this.script = this.engine.compile(loadJs.toString());
 	}
 
 	@Override
@@ -95,7 +94,7 @@ public class NashornJUnitTestRunner extends BlockJUnit4ClassRunner {
 
 	@Override
 	protected Statement methodInvoker(FrameworkMethod method, Object test) {
-		return new ECMAScriptStatement(engine.getBindings(ScriptContext.ENGINE_SCOPE), method, test);
+		return new ECMAScriptStatement(method, test);
 	}
 
 	private static void addStaticMethods(Class<?> type, Bindings bindings) {
@@ -130,16 +129,14 @@ public class NashornJUnitTestRunner extends BlockJUnit4ClassRunner {
 		}
 	}
 
-	private static class ECMAScriptStatement extends Statement {
-		private final Bindings        bindings;
+	private class ECMAScriptStatement extends Statement {
 		private final FrameworkMethod method;
 		private final Object          test;
 
 		private Field testResultField;
 		private List<Field> instanceFields = new ArrayList<>();
 
-		private ECMAScriptStatement(Bindings bindings, FrameworkMethod method, Object test) {
-			this.bindings = bindings;
+		private ECMAScriptStatement(FrameworkMethod method, Object test) {
 			this.method = method;
 			this.test = test;
 
@@ -160,6 +157,10 @@ public class NashornJUnitTestRunner extends BlockJUnit4ClassRunner {
 			for (Field field : instanceFields) {
 				bindings.put(field.getName(), field.get(test));
 			}
+
+			ScriptContext ctx = new SimpleScriptContext();
+			ctx.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+			script.eval(ctx);
 
 			// get JavaScript test method
 			JSObject jsTestMethod = (JSObject) bindings.get(method.getName());

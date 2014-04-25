@@ -20,7 +20,7 @@ import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.Undefined;
 
-import javax.script.ScriptContext;
+import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.nio.file.Files;
@@ -38,12 +38,12 @@ class RequireFunction extends AbstractJSObject {
 
 	private final Map<String, Object> properties = new HashMap<>();
 
-	private final ScriptEngine  engine;
-	private final ScriptContext context;
+	private final ScriptEngine engine;
+	private final Bindings     bindings;
 
-	public RequireFunction(ScriptEngine engine, ScriptContext context) {
+	public RequireFunction(ScriptEngine engine, Bindings bindings) {
 		this.engine = engine;
-		this.context = context;
+		this.bindings = bindings;
 	}
 
 	@Override
@@ -59,7 +59,7 @@ class RequireFunction extends AbstractJSObject {
 
 		if (moduleId.startsWith("classpath:")) {
 			try {
-				return engine.eval("load(\"" + moduleId + "\");", context);
+				return engine.eval("load(\"" + moduleId + "\");", bindings);
 			} catch (ScriptException e) {
 				throw new IllegalStateException(e.getMessage(), e);
 			}
@@ -84,7 +84,7 @@ class RequireFunction extends AbstractJSObject {
 		}
 
 		try {
-			return engine.eval("load(\"" + modulePath.toAbsolutePath().toString() + "\");", context);
+			return engine.eval("load(\"" + modulePath.toAbsolutePath().toString() + "\");", bindings);
 		} catch (ScriptException e) {
 			throw new IllegalStateException(e.getMessage(), e);
 		}

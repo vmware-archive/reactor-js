@@ -30,8 +30,12 @@ ext {
 	reactorVersion = '1.1.0.BUILD-SNAPSHOT'
 
 	// Libraries
-	openHftChronicleVersion = '2.0.3'
 	openHftLangVersion = '6.1.4'
+	openHftChronicleVersion = '2.0.3'
+	jacksonDatabindVersion = '2.3.2'
+	jsonPathVersion = '0.9.1'
+
+	// Testing
 	junitVersion = '4.11'
 }
 
@@ -97,14 +101,16 @@ allprojects {
 	group = 'org.projectreactor.js'
 	repositories {
 		//mavenLocal()
+		mavenCentral()
 		maven { url 'http://repo.spring.io/libs-milestone' }
 		maven { url 'http://repo.spring.io/libs-snapshot' }
-		mavenCentral()
 	}
 
 	dependencies {
 		// Logging
 		compile "org.slf4j:slf4j-api:$slf4jVersion"
+
+		provided "javax.annotation:javax.annotation-api:1.2"
 
 		// Testing
 		testCompile "junit:junit-dep:$junitVersion",
@@ -121,9 +127,14 @@ project('reactor-js-core') {
 		// Reactor
 		compile "org.projectreactor:reactor-core:$reactorVersion"
 
+		// JSON
+		compile "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion",
+				"com.jayway.jsonpath:json-path:$jsonPathVersion"
+
 		// High-speed Messaging
-		optional "net.openhft:chronicle:$openHftChronicleVersion",
-				"net.openhft:lang:$openHftLangVersion"
+		optional "net.openhft:lang:$openHftLangVersion",
+				"net.openhft:chronicle:$openHftChronicleVersion"
+
 	}
 }
 
