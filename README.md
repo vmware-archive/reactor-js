@@ -4,7 +4,7 @@ This is the Nashorn-based JavaScript support for the [Reactor JVM framework](htt
 
 ### Core
 
-TODO: Some of the testing components will be moved over to core at some point.
+TODO : Some of the testing components will be moved over to core at some point.
 
 ### Testing
 
