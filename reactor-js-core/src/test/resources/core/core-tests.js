@@ -13,23 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+var reactor = load("classpath:META-INF/reactor/reactor.js");
 
-package reactor.js.test;
+canCreateReactor = function () {
+  var r = reactor.create({ name: "reactor", dispatcher: "sync" });
+  console.log("reactor: {}", r);
 
-import java.lang.annotation.*;
+  r.on("test", function(ev) {
+    console.log("ev: {}", ev);
+  });
 
-/**
- * @author Jon Brisbin
- */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Inherited
-public @interface JavaScriptTests {
-
-	String[] value() default {};
-
-	String module() default "";
-
-	String[] paths() default { "src/test/resources" };
-
+  r.notify("test", { data: "Hello World!" });
 }

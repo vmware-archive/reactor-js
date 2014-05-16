@@ -16,34 +16,26 @@
 
 package reactor.js.core;
 
-import com.gs.collections.impl.list.mutable.FastList;
-import com.gs.collections.impl.list.mutable.SynchronizedMutableList;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Jon Brisbin
  */
 public class JavaScriptArray extends AbstractJSObject {
 
-	private final List elements;
+	private final List<Object> elements;
 
 	public JavaScriptArray() {
-		this(SynchronizedMutableList.of(FastList.newList()));
+		this(null);
 	}
 
 	public JavaScriptArray(List<?> elements) {
-		this.elements = elements;
-	}
-
-	public static <T> JavaScriptArray from(List<T> elements) {
-		return new JavaScriptArray(elements);
-	}
-
-	public List getElements() {
-		return elements;
+		this.elements = new CopyOnWriteArrayList<>((null != elements ? elements : Collections.emptyList()));
 	}
 
 	public Object newObject(Object... args) {
