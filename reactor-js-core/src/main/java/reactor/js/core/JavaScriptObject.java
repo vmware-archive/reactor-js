@@ -336,6 +336,15 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 				&& other.parent == parent;
 	}
 
+	@Override
+	public int hashCode() {
+		int result = properties != null ? properties.hashCode() : 0;
+		result = 31 * result + (propertySuppliers != null ? propertySuppliers.hashCode() : 0);
+		result = 31 * result + (readOnlyProperties != null ? readOnlyProperties.hashCode() : 0);
+		result = 31 * result + (parent != null ? parent.hashCode() : 0);
+		return result;
+	}
+
 	private static class FieldAccessor implements Function<Object, Object> {
 		private Field field;
 
