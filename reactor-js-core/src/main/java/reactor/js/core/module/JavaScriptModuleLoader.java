@@ -109,8 +109,12 @@ public class JavaScriptModuleLoader {
 				String baseUri;
 				try {
 					if (searchPath.startsWith("classpath:")) {
-						int start = (searchPath.length() > 12 && searchPath.charAt(12) == '/' ? 13 : 12);
-						baseUri = concatRelative(searchPath.substring(start), id);
+						baseUri = concatRelative(searchPath, id);
+						if (baseUri.charAt(13) == '/') {
+							baseUri = baseUri.substring(13);
+						} else {
+							baseUri = baseUri.substring(12);
+						}
 						// Read package.json to find what file to load
 						String pkgJson = read(cl.getResourceAsStream(concatRelative(baseUri, "./package.json")));
 						if (null == pkgJson) {
@@ -235,21 +239,20 @@ public class JavaScriptModuleLoader {
 							concatRelative(searchPath, id, "./index")
 					};
 					for (String s : permutations) {
+						URI u = URI.create((!s.endsWith(".js") ? s + ".js" : s));
 						try {
 							// Set up new search paths starting with the current one
 							List<String> newSearchPaths = new ArrayList<>();
 							newSearchPaths.add(s.substring(0, s.lastIndexOf('/')));
 							newSearchPaths.add(s);
 							newSearchPaths.addAll(searchPaths);
-							mod = loadModule(id,
-							                 URI.create((!s.endsWith(".js") ? s + ".js" : s)),
-							                 new RequireFunction(newSearchPaths));
+							mod = loadModule(id, u, new RequireFunction(newSearchPaths));
 							if (null != mod) {
 								return mod;
 							}
-						} catch (IOException | ScriptException e) {
+						} catch (Exception e) {
 							if (log.isDebugEnabled()) {
-								log.debug(e.getMessage());
+								log.debug("Tried loading {} but got: {}", u, e.getMessage());
 							}
 						}
 					}
@@ -276,13 +279,12 @@ public class JavaScriptModuleLoader {
 				} else {
 					mainJsUri = concatRelative(baseUri, mainJsProp);
 				}
+				URI u = URI.create((mainJsUri.endsWith(".js") ? mainJsUri : mainJsUri + ".js"));
 				try {
-					return loadModule(id,
-					                  URI.create((mainJsUri.endsWith(".js") ? mainJsUri : mainJsUri + ".js")),
-					                  new RequireFunction(newSearchPaths));
-				} catch (IOException | ScriptException e) {
+					return loadModule(id, u, new RequireFunction(newSearchPaths));
+				} catch (Exception e) {
 					if (log.isDebugEnabled()) {
-						log.debug(e.getMessage());
+						log.debug("Tried loading {} but got: {}", u, e.getMessage());
 					}
 				}
 			}
