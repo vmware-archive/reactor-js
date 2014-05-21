@@ -59,7 +59,7 @@ public class JavaScriptObjectSpec implements Supplier<JavaScriptObject> {
 
 	@Override
 	public JavaScriptObject get() {
-		return new JavaScriptObject(properties, propertySuppliers, parent);
+		return new JavaScriptObject(properties, propertySuppliers, null, parent);
 	}
 
 }

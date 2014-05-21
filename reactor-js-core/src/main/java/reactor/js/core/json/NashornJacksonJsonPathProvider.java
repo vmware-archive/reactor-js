@@ -128,13 +128,9 @@ public class NashornJacksonJsonPathProvider extends AbstractJsonProvider impleme
 
 	@Override
 	public boolean isMap(Object obj) {
-		if (Map.class.isInstance(obj)) {
-			return true;
-		} else if (JSObject.class.isInstance(obj)) {
-			return !((JSObject) obj).isArray();
-		} else {
-			return false;
-		}
+		return Map.class.isInstance(obj)
+				|| JSObject.class.isInstance(obj)
+				&& !((JSObject) obj).isArray();
 	}
 
 	@Override
@@ -182,7 +178,7 @@ public class NashornJacksonJsonPathProvider extends AbstractJsonProvider impleme
 	@Override
 	public int length(Object obj) {
 		return (JavaScriptArray.class.isInstance(obj)
-				? ((JavaScriptArray) obj).getElements().size()
+				? ((JavaScriptArray) obj).size()
 				: 0);
 	}
 
@@ -190,7 +186,7 @@ public class NashornJacksonJsonPathProvider extends AbstractJsonProvider impleme
 	@Override
 	public Iterable<Object> toIterable(Object obj) {
 		return (JavaScriptArray.class.isInstance(obj)
-				? ((JavaScriptArray) obj).getElements()
+				? ((JavaScriptArray) obj).values()
 				: Collections.emptyList());
 	}
 
@@ -198,11 +194,11 @@ public class NashornJacksonJsonPathProvider extends AbstractJsonProvider impleme
 	@Override
 	public Object clone(Object obj) {
 		if (JavaScriptArray.class.isInstance(obj)) {
-			return JavaScriptArray.from(((JavaScriptArray) obj).getElements());
+			return ((JavaScriptArray) obj).copyOf();
 		} else if (JavaScriptObject.class.isInstance(obj)) {
-			return JavaScriptObject.from(UnifiedMap.newMap(((JavaScriptObject) obj).getProperties()));
+			return ((JavaScriptObject) obj).copyOf();
 		} else {
-			throw new IllegalStateException("Clone not supported for " + obj.getClass().getName());
+			throw new IllegalArgumentException("Clone not supported for " + obj.getClass().getName());
 		}
 	}
 

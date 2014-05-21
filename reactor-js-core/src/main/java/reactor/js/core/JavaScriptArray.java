@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author Jon Brisbin
  */
-public class JavaScriptArray extends AbstractJSObject {
+public class JavaScriptArray extends AbstractJSObject implements Cloneable {
 
 	private final List<Object> elements;
 
@@ -36,6 +36,10 @@ public class JavaScriptArray extends AbstractJSObject {
 
 	public JavaScriptArray(List<?> elements) {
 		this.elements = new CopyOnWriteArrayList<>((null != elements ? elements : Collections.emptyList()));
+	}
+
+	public int size() {
+		return elements.size();
 	}
 
 	public Object newObject(Object... args) {
@@ -76,6 +80,37 @@ public class JavaScriptArray extends AbstractJSObject {
 	@Override
 	public Collection<Object> values() {
 		return elements;
+	}
+
+	public JavaScriptArray copyOf() {
+		return new JavaScriptArray(elements);
+	}
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return new JavaScriptArray(elements);
+	}
+
+	@Override
+	public String toString() {
+		return "JavaScriptArray{" +
+				"elements=" + elements +
+				'}';
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof JavaScriptArray)) return false;
+
+		JavaScriptArray other = (JavaScriptArray) o;
+
+		return !(elements != null ? !elements.equals(other.elements) : other.elements != null);
+	}
+
+	@Override
+	public int hashCode() {
+		return elements != null ? elements.hashCode() : 0;
 	}
 
 }

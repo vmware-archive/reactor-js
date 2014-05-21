@@ -39,10 +39,14 @@ class JSObjectDeserializer extends JsonDeserializer<JSObject> {
 	                            DeserializationContext ctxt) throws IOException,
 	                                                                JsonProcessingException {
 		Object obj = jp.readValueAs(Object.class);
+
+		Object parent = ctxt.getAttribute("parent");
+		ctxt.setAttribute("parent", obj);
+
 		if (Map.class.isInstance(obj)) {
-			return JavaScriptObject.from((Map) obj);
+			return new JavaScriptObject((Map) obj, null, null, parent);
 		} else if (List.class.isInstance(obj)) {
-			return JavaScriptArray.from((List) obj);
+			return new JavaScriptArray((List) obj);
 		} else {
 			throw new JsonMappingException("Cannot convert value to a valid JSON object", jp.getCurrentLocation());
 		}

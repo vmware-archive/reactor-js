@@ -16,9 +16,12 @@
 
 package reactor.js.core;
 
-import com.gs.collections.api.map.ImmutableMap;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.gs.collections.api.list.ImmutableList;
 import com.gs.collections.api.map.MutableMap;
 import com.gs.collections.api.set.MutableSet;
+import com.gs.collections.impl.list.mutable.FastList;
 import com.gs.collections.impl.map.mutable.SynchronizedMutableMap;
 import com.gs.collections.impl.map.mutable.UnifiedMap;
 import com.gs.collections.impl.set.mutable.UnifiedSet;
@@ -39,7 +42,7 @@ import java.util.function.Function;
 /**
  * @author Jon Brisbin
  */
-public class JavaScriptObject extends AbstractJSObject implements Bindings, Recyclable {
+public class JavaScriptObject extends AbstractJSObject implements Bindings, Recyclable, Cloneable {
 
 	private static final MutableMap<Class<?>, Function<Object, Object>> FIELD_ACCESSORS
 			= SynchronizedMutableMap.of(UnifiedMap.newMap());
@@ -80,18 +83,20 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 		}
 	}
 
-	private final MutableMap<String, Object>        properties;
-	private final ImmutableMap<String, Supplier<?>> propertySuppliers;
+	private final MutableMap<String, Object>      properties;
+	private final MutableMap<String, Supplier<?>> propertySuppliers;
+	private final ImmutableList<String>           readOnlyProperties;
 
 	private volatile Object     parent;
 	private volatile ParentType parentType;
 
 	public JavaScriptObject() {
-		this(null, null, null);
+		this(null, null, null, null);
 	}
 
 	public JavaScriptObject(Map<String, Object> properties,
 	                        Map<String, Supplier<?>> propertySuppliers,
+	                        List<String> readOnlyProperties,
 	                        Object parent) {
 		if (null == properties) {
 			properties = Collections.emptyMap();
@@ -99,8 +104,12 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 		if (null == propertySuppliers) {
 			propertySuppliers = Collections.emptyMap();
 		}
+		if (null == readOnlyProperties) {
+			readOnlyProperties = Collections.emptyList();
+		}
 		this.properties = UnifiedMap.newMap(properties);
-		this.propertySuppliers = UnifiedMap.newMap(propertySuppliers).toImmutable();
+		this.propertySuppliers = UnifiedMap.newMap(propertySuppliers);
+		this.readOnlyProperties = FastList.newList(readOnlyProperties).toImmutable();
 		setParent(parent);
 	}
 
@@ -129,17 +138,28 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 	}
 
 	public Object newObject(Object... args) {
-		return new JavaScriptObject(properties, propertySuppliers.castToMap(), this);
+		return new JavaScriptObject(properties, propertySuppliers, readOnlyProperties.castToList(), this);
 	}
 
+	public <T> JavaScriptObject supply(String name, Supplier<T> supplier) {
+		propertySuppliers.put(name, supplier);
+		return this;
+	}
+
+	@JsonAnySetter
 	@Override
 	public Object put(String name, Object value) {
+		if (readOnlyProperties.contains(name)) {
+			throw new IllegalArgumentException("Property '" + name + "' is read-only");
+		}
 		return properties.put(name, value);
 	}
 
 	@Override
 	public void putAll(Map<? extends String, ? extends Object> toMerge) {
-		properties.putAll(toMerge);
+		for (Entry<? extends String, ? extends Object> entry : toMerge.entrySet()) {
+			put(entry.getKey(), entry.getValue());
+		}
 	}
 
 	@Override
@@ -147,6 +167,7 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 		return hasProperty(key);
 	}
 
+	@JsonAnyGetter
 	@Override
 	public Object get(Object key) {
 		return getMember(key.toString());
@@ -154,6 +175,9 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 
 	@Override
 	public Object remove(Object key) {
+		if (readOnlyProperties.contains(key)) {
+			throw new IllegalArgumentException("Property '" + key + "' is read-only");
+		}
 		return properties.remove(key);
 	}
 
@@ -199,7 +223,7 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 				                                        : null
 		);
 		if (Map.class.isInstance(obj)) {
-			return new JavaScriptObject((Map<String, Object>) obj, null, parent);
+			return new JavaScriptObject((Map<String, Object>) obj, null, null, parent);
 		} else if (List.class.isInstance(obj)) {
 			return new JavaScriptArray((List) obj);
 		} else {
@@ -264,14 +288,52 @@ public class JavaScriptObject extends AbstractJSObject implements Bindings, Recy
 
 		if (properties.containsKey(key) || propertySuppliers.containsKey(key)) {
 			return properties.getIfAbsentPut(key, () -> propertySuppliers.getIfAbsentValue(key, NULL_SUPPLIER).get());
-		} else {
+		} else if (null != parent) {
 			return parentType.get(parent, key);
+		} else {
+			return null;
 		}
 	}
 
 	@Override
 	public void recycle() {
-		properties.clear();
+		clear();
+	}
+
+	public JavaScriptObject copyOf() {
+		try {
+			return (JavaScriptObject) clone();
+		} catch (CloneNotSupportedException e) {
+			throw new IllegalStateException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return new JavaScriptObject(properties, propertySuppliers, readOnlyProperties.castToList(), parent);
+	}
+
+	@Override
+	public String toString() {
+		return "JavaScriptObject{" +
+				"properties=" + properties +
+				", propertySuppliers=" + propertySuppliers +
+				", readOnlyProperties=" + readOnlyProperties +
+				", parent=" + parent +
+				'}';
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!JavaScriptObject.class.isInstance(obj)) {
+			return false;
+		}
+		JavaScriptObject other = (JavaScriptObject) obj;
+
+		return other.properties.equals(properties)
+				&& other.propertySuppliers.equals(propertySuppliers)
+				&& other.readOnlyProperties.equals(readOnlyProperties)
+				&& other.parent == parent;
 	}
 
 	private static class FieldAccessor implements Function<Object, Object> {

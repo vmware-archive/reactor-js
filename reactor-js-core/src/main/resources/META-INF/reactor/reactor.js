@@ -21,7 +21,6 @@
   var Consumer = Java.type("reactor.function.Consumer");
   var Environment = Java.type("reactor.core.Environment");
   var Reactors = Java.type("reactor.core.spec.Reactors");
-  var JavaScriptReactor = Java.type("reactor.js.core.JavaScriptReactor");
 
   var LOG = LoggerFactory.getLogger("reactor.js");
   var ENV = new Environment();
@@ -37,7 +36,7 @@
     LOG.debug("Registering Reactor {}...", name);
     activeReactors[name] = r;
 
-    return new JavaScriptReactor(r);
+    return r;
   }
 
   return {
