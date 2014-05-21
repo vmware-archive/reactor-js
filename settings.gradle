@@ -1,3 +1,3 @@
 rootProject.name = 'reactor-js'
 
-include 'reactor-js-core', 'reactor-js-test'
+include 'reactor-js-core', 'reactor-js-test', 'reactor-js-rest'
