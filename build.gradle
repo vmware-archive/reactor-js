@@ -49,7 +49,7 @@ buildscript {
 }
 apply from: "$gradleScriptDir/setup.gradle"
 
-allprojects {
+subprojects {
 	apply plugin: 'propdeps'
 	apply plugin: 'java'
 	apply plugin: 'idea'
@@ -88,14 +88,6 @@ allprojects {
 	compileTestJava {
 		sourceCompatibility = 1.8
 		targetCompatibility = 1.8
-	}
-
-	test {
-		systemProperty("java.awt.headless", "true")
-		systemProperty("testGroups", project.properties.get("testGroups"))
-		scanForTestClasses = false
-		include '**/*Tests.*'
-		exclude '**/*Abstract*.*'
 	}
 
 	group = 'org.projectreactor.js'
