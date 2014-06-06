@@ -3,3 +3,9 @@
 *.iml
 build
 out
+.gradle
+target
+bin
+.settings
+.project
+.classpath
