@@ -82,6 +82,24 @@ public class JSONIntegrationTests extends AbstractJavaScriptTest {
 		Double dbl = (Double) engine.eval("jsonObj.store.book[0].price;", bindings);
 		assertThat("Value was extracted", dbl, is(8.95));
 	}
+	
+	@Test
+    public void parsesAndStringifysJsonDocument() throws ScriptException {
+        engine.eval("var JSON = Java.type(\"reactor.js.core.json.JsonFunctions\");", bindings);
+        bindings.put("jsonStr", DOCUMENT);
+
+        Object obj = engine.eval("var jsonObj = JSON.parse(jsonStr);jsonObj", bindings);
+        assertNotNull("Object was parsed", obj);
+        
+        obj = engine.eval("jsonStr = JSON.stringify(jsonObj);jsonStr", bindings);
+        assertNotNull("Object was stringified", obj);
+        
+        obj = engine.eval("jsonObj = JSON.parse(jsonStr);jsonObj", bindings);
+        assertNotNull("Object was re-parsed", obj);
+
+        Double dbl = (Double) engine.eval("jsonObj.store.book[0].price;", bindings);
+        assertThat("Value was extracted", dbl, is(8.95));
+    }
 
 	@SuppressWarnings("unchecked")
 	@Test
