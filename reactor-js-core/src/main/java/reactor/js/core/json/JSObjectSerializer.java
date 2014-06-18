@@ -34,6 +34,7 @@ class JSObjectSerializer extends JsonSerializer<JSObject> {
 	                      SerializerProvider provider) throws IOException,
 	                                                          JsonProcessingException {
 		if (value.isArray()) {
+		    jgen.writeStartArray();
 			int i = -1;
 			for (; ; ) {
 				if (value.hasSlot(++i)) {
@@ -42,10 +43,13 @@ class JSObjectSerializer extends JsonSerializer<JSObject> {
 					break;
 				}
 			}
+			jgen.writeEndArray();
 		} else {
+		    jgen.writeStartObject();
 			for (String key : value.keySet()) {
-				jgen.writeObject(value.getMember(key));
+			    jgen.writeObjectField(key, value.getMember(key));
 			}
+			jgen.writeEndObject();
 		}
 	}
 }
