@@ -103,8 +103,8 @@ public class JSONIntegrationTests extends AbstractJavaScriptTest {
 	
 	@Test
     public void parsesIntoNativeArray() throws ScriptException {
-	    // comment out the line below, it works. 
-	    engine.eval("var JSON = Java.type(\"reactor.js.core.json.JsonFunctions\");", bindings);
+	    //engine.eval("var JSON = Java.type(\"reactor.js.core.json.JsonFunctions\");", bindings);
+	    engine.eval("var JSON = Java.type(\"com.pivotal.cf.mobile.ats.json.JsonFunctions\");", bindings);
         bindings.put("jsonStr", DOCUMENT);
 
         Object obj = engine.eval("var jsonObj = JSON.parse(jsonStr);jsonObj", bindings);

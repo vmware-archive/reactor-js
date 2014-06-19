@@ -41,12 +41,18 @@ ext {
 
 buildscript {
 	repositories {
+        jcenter()
 		maven { url "http://repo.spring.io/plugins-release" }
 	}
 	dependencies {
+        classpath 'me.champeau.gradle:jmh-gradle-plugin:0.1'
 		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.4'
 	}
 }
+repositories {
+  jcenter()
+}
+
 apply from: "$gradleScriptDir/setup.gradle"
 
 subprojects {
@@ -54,6 +60,7 @@ subprojects {
 	apply plugin: 'java'
 	apply plugin: 'idea'
 	apply plugin: 'eclipse'
+	apply plugin: 'maven'
 
 	configurations.all {
 		exclude group: "commons-logging"
@@ -113,11 +120,14 @@ subprojects {
 }
 
 project('reactor-js-core') {
+	apply plugin: 'me.champeau.gradle.jmh'
 	description = 'Core Reactor components for working with Javascript in Reactor'
-
+	
+   	
 	dependencies {
 		// Reactor
 		compile "org.projectreactor:reactor-core:$reactorVersion"
+		
 
 		// Hashing
 		compile "com.sangupta:murmur:1.0.0"
@@ -125,12 +135,35 @@ project('reactor-js-core') {
 		// JSON
 		compile "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion",
 						"com.jayway.jsonpath:json-path:$jsonPathVersion"
+						
+		// JMH benchmarking
+		jmh "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
+		jmhCompile "org.openjdk.jmh:jmh-generator-annprocess:0.9"
+		// without below line eclipse complains
+		compile "org.openjdk.jmh:jmh-generator-annprocess:0.9"
 
 		// High-speed Messaging
 		optional "net.openhft:lang:$openHftLangVersion",
 						 "net.openhft:chronicle:$openHftChronicleVersion"
 
 		testCompile project(":reactor-js-test")
+		
+	}
+	jmh {
+		iterations = 5
+		warmupIterations = 10
+		fork = 1
+	}
+	
+	sourceSets {
+	    jmh {
+	        java {
+	            srcDir 'src/jmh/java'
+	        }
+	        resources {
+	            srcDir 'src/jmh/resources'
+	        }
+	    }
 	}
 }
 
@@ -151,4 +184,5 @@ project('reactor-js-test') {
 		compile "junit:junit-dep:$junitVersion"
 	}
 }
+
 
